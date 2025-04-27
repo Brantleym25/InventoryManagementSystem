@@ -10,7 +10,7 @@ import javax.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/addItem", "/listItems"})
+@WebServlet(urlPatterns = {"/addItem", "/listItems", "/updateItem", "/deleteItem"})
 public class InventoryServlet extends HttpServlet {
 
     private SqlSessionFactory sqlSessionFactory;
@@ -19,21 +19,38 @@ public class InventoryServlet extends HttpServlet {
     public void init() throws ServletException {
         sqlSessionFactory = MyBatisUtil.getSqlSessionFactory();
     }
-
+    //Brantleys updates - added in update and delete requests
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        if (request.getRequestURI().endsWith("/addItem")) {
-            ObjectMapper mapper = new ObjectMapper();
-            InventoryItem item = mapper.readValue(request.getReader(), InventoryItem.class);
+        String path = request.getRequestURI();
 
-            try (SqlSession session = sqlSessionFactory.openSession()) {
-                InventoryMapper mapperInterface = session.getMapper(InventoryMapper.class);
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (SqlSession session = sqlSessionFactory.openSession()) {
+            InventoryMapper mapperInterface = session.getMapper(InventoryMapper.class);
+
+            if (path.endsWith("/addItem")) {
+                InventoryItem item = mapper.readValue(request.getReader(), InventoryItem.class);
                 mapperInterface.insertItem(item);
                 session.commit();
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\":\"Item added successfully\"}");
             }
-
-            response.setContentType("application/json");
-            response.getWriter().write("{\"status\":\"Item added successfully\"}");
+            else if (path.endsWith("/updateItem")) {
+                InventoryItem item = mapper.readValue(request.getReader(), InventoryItem.class);
+                mapperInterface.updateItem(item);
+                session.commit();
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\":\"Item updated successfully\"}");
+            }
+            else if (path.endsWith("/deleteItem")) {
+                // Expecting JSON body like {"id": 5}
+                int id = mapper.readTree(request.getReader()).get("id").asInt();
+                mapperInterface.deleteItem(id);
+                session.commit();
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\":\"Item deleted successfully\"}");
+            }
         }
     }
 
