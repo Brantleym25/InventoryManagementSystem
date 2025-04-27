@@ -12,4 +12,13 @@ public interface InventoryMapper {
 
     @Select("SELECT * FROM inventory_items ORDER BY id")
     List<InventoryItem> getAllItems();
+
+    //Brantleys updates
+    @Update("UPDATE inventory_items " +
+            "SET name = #{name}, description = #{description}, quantity = #{quantity}, price = #{price} " +
+            "WHERE id = #{id}")
+    void updateItem(InventoryItem item);
+
+    @Delete("DELETE FROM inventory_items WHERE id = #{id}")
+    void deleteItem(int id);
 }
